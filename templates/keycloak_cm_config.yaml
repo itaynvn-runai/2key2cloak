@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+  namespace: {{ .Release.Namespace }}
+data:
+  CLUSTER_DOMAIN: {{ .Values.cnvrg.clusterDomain }}
+  OPERATOR: {{ .Values.cnvrg.operatorVersion }}
+  PROTOCOL: {{ if .Values.https.enabled }}https{{ else }}http{{ end }}
+  REALM_NAME: {{ .Values.clientSettings.realmName }}
+  CLIENT_ID: {{ .Values.clientSettings.clientId }}
+  USER_FIRST_NAME: {{ .Values.initUser.name.first }}
+  USER_LAST_NAME: {{ .Values.initUser.name.last }}
+  USER_EMAIL: {{ .Values.initUser.email }}
+  USER_USERNAME: {{ .Values.initUser.username }}
+  KEYCLOAK_NAMESPACE: {{ .Release.Namespace }}

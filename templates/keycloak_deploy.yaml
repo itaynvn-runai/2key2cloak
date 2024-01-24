@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      initContainers:
+      - name: test
+        image: busybox
+        command: ['sh', '-c', 'chmod -R 777 /opt/keycloak/data']
+        volumeMounts:
+        - name: keycloak-data
+          mountPath: /opt/keycloak/data
+      containers:
+      - command:
+        - /opt/keycloak/bin/kc.sh
+        - start-dev
+        env:
+        - name: KEYCLOAK_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-creds
+              key: KEYCLOAK_ADMIN
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-creds
+              key: KEYCLOAK_ADMIN_PASSWORD
+        {{- if .Values.https.enabled }}
+        - name: KC_HOSTNAME_STRICT_HTTPS
+          value: "true"
+        - name: KC_HOSTNAME
+          value: {{ .Values.host }}
+        - name: KC_HOSTNAME_ADMIN_URL
+          value: "https://{{ .Values.host }}"
+        - name: KC_PROXY
+          value: edge
+        {{- end }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: keycloak
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        {{- if .Values.openshift.enabled -}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        {{- end }}
+        volumeMounts:
+        - name: keycloak-data
+          mountPath: /opt/keycloak/data
+      volumes:
+      - name: keycloak-data
+        persistentVolumeClaim:
+          claimName: keycloak-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      serviceAccountName: {{ include "2key2cloak.serviceAccountName" . }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

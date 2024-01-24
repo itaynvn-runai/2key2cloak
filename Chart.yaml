@@ -1,0 +1,9 @@
+0apiVersion: v2
+name: 2key2cloak
+description: A Helm chart for keycloak server. Includes persistent storage and boot-up script that creates an OIDC client. based on image https://quay.io/repository/keycloak/keycloak
+
+type: application
+
+version: 0.1.0
+
+appVersion: "23.0.4"

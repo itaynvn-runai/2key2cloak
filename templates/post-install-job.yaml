@@ -1,0 +1,45 @@
+# templates/post-install-job.yaml
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: post-install-job
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    metadata:
+      name: post-install-job
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: post-install-container
+        image: your-image:latest
+        command: ["/bin/bash"]
+        args:
+        - /config/keycloak_config.sh
+        - -d $CLUSTER_DOMAIN
+        - -o $OPERATOR
+        - -p $PROTOCOL
+        volumeMounts:
+        - name: post-install-scripts
+          mountPath: /config
+        env:
+        - name: SECRET_VALUE
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-creds
+              key: your-key
+        envFrom:
+        - secretRef:
+            name: keycloak-creds
+        - configMapRef:
+            name: keycloak-config
+      restartPolicy: Never
+      volumes:
+      - name: post-install-scripts
+        configMap:
+          name: keycloak-post-install-script

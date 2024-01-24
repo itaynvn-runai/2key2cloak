@@ -1,0 +1,28 @@
+{{- if .Values.virtualService.enabled -}}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:  
+  name: keycloak
+  namespace: {{ if not .Values.virtualService.namespace }}{{ .Release.Namespace }}{{ else }}{{ .Values.virtualService.namespace }}{{ end }}
+spec:
+  gateways:
+  - {{ .Values.virtualService.gateway }}
+  hosts:
+  - {{ .Values.host }}
+  http:
+  - retries:
+      attempts: 5
+      perTryTimeout: 3600s
+    route:
+    - destination:
+        host: "keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+        port:
+          number: 80
+      {{- if .Values.https.enabled }}
+        headers:
+          request:
+            set:
+              x-forwarded-proto: https
+      {{- end }}
+    timeout: 18000s
+{{- end }}
