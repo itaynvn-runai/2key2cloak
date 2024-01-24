@@ -27,12 +27,6 @@ spec:
         volumeMounts:
         - name: post-install-scripts
           mountPath: /config
-        env:
-        - name: SECRET_VALUE
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-creds
-              key: your-key
         envFrom:
         - secretRef:
             name: keycloak-creds
