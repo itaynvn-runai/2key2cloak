@@ -63,7 +63,7 @@ virtualService:
   gateway: my-gateway
 
 ingress:
-  enabled: true
+  enabled: false
   type: ingress
   className: ""
   namespace: ""

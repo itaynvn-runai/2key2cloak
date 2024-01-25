@@ -44,20 +44,20 @@ variables=("CLUSTER_DOMAIN" "OPERATOR" "PROTOCOL" "KEYCLOAK_ADMIN" "KEYCLOAK_ADM
 for var in "${variables[@]}"; do
     [[ -z "${!var}" ]] && { echo "$var is empty."; empty=true; }
 done
-[[ -z $empty ]] && echo "All variables populated! moving on..." || echo "One or more variables are empty :(" && exit 1
+[[ -z $empty ]] && echo "* All variables populated! moving on... *" || echo "One or more variables are empty :("
 
 # set keycloak UI URL
 KEYCLOAK_URL="$PROTOCOL://keycloak.$CLUSTER_DOMAIN"
 
 # Check the value of OPERATOR and perform actions accordingly
 if [ "$OPERATOR" = "slim" ]; then
-    echo "using slim operator settings"
+    echo "* using slim operator settings *"
     PROTOCOL="https"
     APP_REDIRECT_URI="$PROTOCOL://app.$CLUSTER_DOMAIN/oauth2/callback"
     KIBANA_REDIRECT_URI="$PROTOCOL://sso-central.$CLUSTER_DOMAIN/oauth2/callback"
     WEB_ORIGINS="$PROTOCOL://app.$CLUSTER_DOMAIN/*"
 elif [ "$OPERATOR" = "v4" ]; then
-    echo "using v4 operator settings"
+    echo "* using v4 operator settings *"
     APP_REDIRECT_URI="$PROTOCOL://app.$CLUSTER_DOMAIN/oauth2/callback"
     KIBANA_REDIRECT_URI="$PROTOCOL://kibana.$CLUSTER_DOMAIN/oauth2/callback"
     WEB_ORIGINS="$PROTOCOL://app.$CLUSTER_DOMAIN/*"
@@ -65,6 +65,7 @@ else
     echo "Invalid operator: $OPERATOR"
     exit 1
 fi
+echo "* redirect URL's configured *"
 
 # Get new admin access token function
 get_access_token() {
@@ -85,6 +86,7 @@ curl -s -X POST "$KEYCLOAK_URL/admin/realms" \
     --data-raw "{
     \"realm\": \"$REALM_NAME\",
     \"enabled\": true}"
+echo "* realm created *"
 
 # Create a new user
 NEW_TOKEN=$(get_access_token)
@@ -98,6 +100,7 @@ curl -s -X POST "$KEYCLOAK_URL/admin/realms/$REALM_NAME/users" \
     \"enabled\":\"true\",
     \"emailVerified\": true,
     \"credentials\": [{\"type\": \"password\", \"value\": \"$INIT_USER_PASSWORD\", \"temporary\": false}]}"
+echo "* new init user created *"
 
 # Create an OIDC client
 NEW_TOKEN=$(get_access_token)
@@ -110,18 +113,22 @@ curl --location --request POST "$KEYCLOAK_URL/admin/realms/$REALM_NAME/clients" 
     \"webOrigins\": [\"$WEB_ORIGINS\"],
     \"standardFlowEnabled\": true
 }"
+echo "* OIDC client created *"
 
 # Get OIDC client UUID
 NEW_TOKEN=$(get_access_token)
 CLIENT_UUID=$(curl --location --request GET "$KEYCLOAK_URL/admin/realms/$REALM_NAME/clients" \
 --header "Authorization: Bearer $NEW_TOKEN" \
 | jq -r ".[] | select(.clientId==\"$CLIENT_ID\") | .id")
+echo "* OIDC client UUID retrieved *"
 
 # Enable authentication and retrieve client secret
 NEW_TOKEN=$(get_access_token)
 CLIENT_SECRET=$(curl --location --request GET "$KEYCLOAK_URL/admin/realms/$REALM_NAME/clients/$CLIENT_UUID/client-secret" \
 --header "Authorization: Bearer $NEW_TOKEN" \
 | jq -r ".value")
+echo "* auth enabled + client secret retrieved *"
+
 
 echo "done! creating secrets.."
 
@@ -129,3 +136,5 @@ echo "done! creating secrets.."
 printf "\n  sso:\n    enabled: true\n    adminUser: $KEYCLOAK_ADMIN\n    provider: oidc\n    emailDomain: [\"*\"]\n    clientId: $CLIENT_ID\n    clientSecret: $CLIENT_SECRET\n    oidcIssuerUrl: $KEYCLOAK_URL/realms/$REALM_NAME\n" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic keycloak-cnvrgapp-config --from-file=cnvrgapp_sso_config.yaml=/dev/stdin
 # create secret with kubectl patch command:
 printf "kubectl -n cnvrg patch cnvrgapp cnvrg-app --type=json -p='[{\"op\": \"replace\", \"path\": \"/spec/sso\", \"value\": {\"adminUser\": \"$KEYCLOAK_ADMIN\", \"clientId\": \"$CLIENT_ID\", \"clientSecret\": \"$CLIENT_SECRET\", \"emailDomain\": [\"*\", \"mycorp.net\"], \"enabled\": true, \"oidcIssuerUrl\": \"$KEYCLOAK_URL/realms/$REALM_NAME\", \"provider\": \"oidc\"}}]'" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic keycloak-cnvrgapp-kubectl --from-file=cnvrgapp_sso_kubectl.sh=/dev/stdin
+
+echo "*** post install script finished :) ***"

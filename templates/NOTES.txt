@@ -1,12 +1,12 @@
 2 Key 2 Cloak installed succesfully :)
 
 -=- Keycloak UI address:
-kubectl -n {{ .Release.Namespace }} get ingress
-kubectl -n {{ .Release.Namespace }} get virtualservice
-kubectl -n {{ .Release.Namespace }} get route
+  $ kubectl -n {{ .Release.Namespace }} get ingress
+  $ kubectl -n {{ .Release.Namespace }} get virtualservice
+  $ kubectl -n {{ .Release.Namespace }} get route
 
 -=- Get settings:
-kubectl -n {{ .Release.Namespace }} get secret keycloak-cnvrgapp-config -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
+  $ kubectl -n {{ .Release.Namespace }} get secret keycloak-cnvrgapp-config -o yaml
 
 -=- Get kubectl patch command for applying SSO settings in cnvrgapp:
-kubectl -n {{ .Release.Namespace }} get secret keycloak-cnvrgapp-kubectl -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
+  $ kubectl -n {{ .Release.Namespace }} get secret keycloak-cnvrgapp-kubectl -o yaml

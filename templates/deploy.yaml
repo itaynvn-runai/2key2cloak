@@ -29,18 +29,8 @@ spec:
       - command:
         - /opt/keycloak/bin/kc.sh
         - start-dev
-        env:
-        - name: KEYCLOAK_ADMIN
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-creds
-              key: KEYCLOAK_ADMIN
-        - name: KEYCLOAK_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-creds
-              key: KEYCLOAK_ADMIN_PASSWORD
         {{- if .Values.https.enabled }}
+        env:
         - name: KC_HOSTNAME_STRICT_HTTPS
           value: "true"
         - name: KC_HOSTNAME
@@ -50,6 +40,9 @@ spec:
         - name: KC_PROXY
           value: edge
         {{- end }}
+        envFrom:
+        - secretRef:
+            name: keycloak-creds
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: keycloak
@@ -72,6 +65,7 @@ spec:
       restartPolicy: Always
       securityContext: {}
       serviceAccountName: {{ include "2key2cloak.serviceAccountName" . }}
+      {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

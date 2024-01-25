@@ -5,7 +5,9 @@ metadata:
   name: keycloak
   namespace: {{ if not .Values.ingress.namespace }}{{ .Release.Namespace }}{{ else }}{{ .Values.ingress.namespace }}{{ end }}
 spec:
+  {{- if ne .Values.ingress.className "" }}
   ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
   rules:
   - host: {{ .Values.host }}
     http:

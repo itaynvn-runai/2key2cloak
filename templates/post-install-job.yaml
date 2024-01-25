@@ -17,13 +17,11 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: post-install-container
-        image: your-image:latest
-        command: ["/bin/bash"]
-        args:
-        - /config/keycloak_config.sh
-        - -d $CLUSTER_DOMAIN
-        - -o $OPERATOR
-        - -p $PROTOCOL
+        image: docker.io/cnvrg/network-debugger:1.4
+        command:
+        - "/bin/bash"
+        - "-c"
+        - "/config/keycloak_config.sh -d $CLUSTER_DOMAIN -o $OPERATOR -p $PROTOCOL"
         volumeMounts:
         - name: post-install-scripts
           mountPath: /config
@@ -37,3 +35,4 @@ spec:
       - name: post-install-scripts
         configMap:
           name: keycloak-post-install-script
+          defaultMode: 0755
