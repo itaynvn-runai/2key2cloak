@@ -2,8 +2,9 @@
 helm chart that deploys a keycloak server.
 ## description
 includes:
-- persistent storage
-- ingress/virtualservice exposing
+- persistent storage for data
+- exposing with ingress/virtualservice
+- HTTP/S support
 - OpenShift support
 - automatically creates an OIDC client
 
@@ -19,7 +20,7 @@ The admin for the keycloak UI.
 | param | description | default value |
 |--|--|--|
 | `admin.username` | The admin username | kcadmin
-| `admin.password` | The admin password | *auto-generated if empty*
+| `admin.password` | The admin password. *auto-generated if left empty*  | 
 
 ### Initial user
 the initial "regular" user who will be associated with the OIDC client.
@@ -30,7 +31,7 @@ Try to keep the details related for clarity.
 | `initUser.name.last` | Last name | Doe
 | `initUser.username` | Username | johndoe
 | `initUser.email` | Email address | johndoe@mycorp.net
-| `initUser.password` | Password | *auto-generated if empty*
+| `initUser.password` | Password. *auto-generated if left empty*  | 
 
 ###  OIDC client
 | param | description | default value |
@@ -54,8 +55,7 @@ cnvrg related params. can be ignored if not needed.
 ###  host
 | param | description | default value |
 |--|--|--|
-| `host` | the host address where keycloak UI is expected to be reached.
- | keycloak.web.mycorp.net
+| `host` | the host address where keycloak UI is expected to be reached. | keycloak.web.mycorp.net
 
 ###  HTTPS
 | param | description | default value |
