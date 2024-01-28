@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  2key2cloak:
+  - apiVersion: v2
+    appVersion: 23.0.4
+    created: "2024-01-28T20:40:49.113507+02:00"
+    description: A Helm chart for keycloak server, with storage and customizable OIDC
+      client. based on image https://quay.io/repository/keycloak/keycloak
+    digest: ad36eb43c1775ed6be46032954dbd26c0a979a02031e4b64d04611cd458c2e36
+    name: 2key2cloak
+    type: application
+    urls:
+    - https://itaynvn.github.io/2key2cloak/2key2cloak-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-01-28T20:40:49.112187+02:00"
