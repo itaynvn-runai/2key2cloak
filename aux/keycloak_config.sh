@@ -1,53 +1,24 @@
 #!/bin/bash
 
-# run this script using the following convention:
-#
-# bash keycloak_config.sh -d aks-cicd-20375.cicd.cnvrg.me -o v4 -p https
-#
-# required params:
-# --cluster-domain (-d) is the cluster domain of your cnvrg app
-# --operator (-o) is the operator version, either "v4" or "slim"
-#
-# optional params:
-# --protocol (-p) is the protocol, by default its http, pass "https" if needed.
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    key="$1"
-
-    case $key in
-        --cluster-domain|-d)
-            CLUSTER_DOMAIN="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --operator|-o)
-            OPERATOR="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --protocol|-p)
-            PROTOCOL="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        *) # unknown option
-            echo "Unknown option: $key"
-            exit 1
-            ;;
-    esac
-done
-
 # list of vars to check
-variables=("CLUSTER_DOMAIN" "OPERATOR" "PROTOCOL" "KEYCLOAK_ADMIN" "KEYCLOAK_ADMIN_PASSWORD" "REALM_NAME" "USER_FIRST_NAME" "USER_LAST_NAME" "USER_EMAIL" "USER_USERNAME" "INIT_USER_PASSWORD" "CLIENT_ID")
+variables=("CLUSTER_DOMAIN" "OPERATOR" "PROTOCOL" "KEYCLOAK_ADMIN" "KEYCLOAK_ADMIN_PASSWORD" "KEYCLOAK_URL" "REALM_NAME" "USER_FIRST_NAME" "USER_LAST_NAME" "USER_EMAIL" "USER_USERNAME" "INIT_USER_PASSWORD" "CLIENT_ID")
 # Check if any var is empty
 for var in "${variables[@]}"; do
-    [[ -z "${!var}" ]] && { echo "$var is empty."; empty=true; }
+    if [[ -n "${!var}" ]]; then
+        echo "$var = ${!var}"
+    else
+        echo "$var is empty."
+        empty=true
+    fi
 done
-[[ -z $empty ]] && echo "* All variables populated! moving on... *" || echo "One or more variables are empty :("
 
-# set keycloak UI URL
-KEYCLOAK_URL="$PROTOCOL://keycloak.$CLUSTER_DOMAIN"
+# Check if all vars are populated
+if [[ -z $empty ]]; then
+    echo "* All variables populated! moving on... *"
+else
+    echo "* One or more variables are empty :( *"
+    exit 1
+fi
 
 # Check the value of OPERATOR and perform actions accordingly
 if [ "$OPERATOR" = "slim" ]; then
@@ -129,12 +100,9 @@ CLIENT_SECRET=$(curl --location --request GET "$KEYCLOAK_URL/admin/realms/$REALM
 | jq -r ".value")
 echo "* auth enabled + client secret retrieved *"
 
-
-echo "done! creating secrets.."
-
-# create secret with sso section in cnvrgapp:
-printf "\n  sso:\n    enabled: true\n    adminUser: $KEYCLOAK_ADMIN\n    provider: oidc\n    emailDomain: [\"*\"]\n    clientId: $CLIENT_ID\n    clientSecret: $CLIENT_SECRET\n    oidcIssuerUrl: $KEYCLOAK_URL/realms/$REALM_NAME\n" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic keycloak-cnvrgapp-config --from-file=cnvrgapp_sso_config.yaml=/dev/stdin
 # create secret with kubectl patch command:
-printf "kubectl -n cnvrg patch cnvrgapp cnvrg-app --type=json -p='[{\"op\": \"replace\", \"path\": \"/spec/sso\", \"value\": {\"adminUser\": \"$KEYCLOAK_ADMIN\", \"clientId\": \"$CLIENT_ID\", \"clientSecret\": \"$CLIENT_SECRET\", \"emailDomain\": [\"*\", \"mycorp.net\"], \"enabled\": true, \"oidcIssuerUrl\": \"$KEYCLOAK_URL/realms/$REALM_NAME\", \"provider\": \"oidc\"}}]'" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic keycloak-cnvrgapp-kubectl --from-file=cnvrgapp_sso_kubectl.sh=/dev/stdin
+echo "* creating patch command secrets.. *"
+printf "kubectl -n cnvrg patch cnvrgapp cnvrg-app --type=json -p='[{\"op\": \"replace\", \"path\": \"/spec/sso\", \"value\": {\"adminUser\": \"$KEYCLOAK_ADMIN\", \"clientId\": \"$CLIENT_ID\", \"clientSecret\": \"$CLIENT_SECRET\", \"emailDomain\": [\"*\", \"mycorp.net\"], \"cookieSecret\": null, \"image\": null, \"enabled\": true, \"oidcIssuerUrl\": \"$KEYCLOAK_URL/realms/$REALM_NAME\", \"provider\": \"oidc\"}}]'" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic cnvrgapp-keycloak-patch --from-file=cnvrgapp_sso_kubectl.sh=/dev/stdin
+printf "kubectl -n cnvrg exec -it deploy/app -c cnvrg-app -- rails runner 'User.create!(username: \"inituser\", email: \"init@user.com\", password: \"$KEYCLOAK_ADMIN_PASSWORD\"); Organization.create!(slug: \"t3st1ng\", display_name: \"t3st1ng\", user_id: 1); Membership.create_membership(Organization.find_by(slug:\"t3st1ng\"), \"$USER_EMAIL\", 0);'" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic cnvrg-organization-patch --from-file=cnvrg_organization.sh=/dev/stdin
 
 echo "*** post install script finished :) ***"

@@ -5,8 +5,11 @@
   $ kubectl -n {{ .Release.Namespace }} get virtualservice
   $ kubectl -n {{ .Release.Namespace }} get route
 
--=- Get settings:
-  $ kubectl -n {{ .Release.Namespace }} get secret keycloak-cnvrgapp-config -o yaml
+-=- Get keycloak credentials:
+  $ kubectl -n {{ .Release.Namespace }} get secret keycloak-creds -o yaml
 
--=- Get kubectl patch command for applying SSO settings in cnvrgapp:
-  $ kubectl -n {{ .Release.Namespace }} get secret keycloak-cnvrgapp-kubectl -o yaml
+-=- Get "kubectl patch" command for applying SSO settings in cnvrgapp:
+  $ kubectl -n {{ .Release.Namespace }} get secret cnvrgapp-keycloak-patch -o jsonpath='{.data.cnvrgapp_sso_kubectl\.sh}' | base64 --decode && echo ""
+
+-=- Get "kubectl exec" command to create organization and invite your init user as an admin:
+  $ kubectl -n {{ .Release.Namespace }} get secret cnvrg-organization-patch -o jsonpath='{.data.cnvrg_organization\.sh}' | base64 --decode && echo ""

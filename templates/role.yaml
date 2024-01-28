@@ -4,6 +4,6 @@ metadata:
   namespace: keycloak
   name: keycloak-role
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["create"]
+- apiGroups: ["*"]
+  resources: ["secrets","pods"]
+  verbs: ["create","list"]

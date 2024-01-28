@@ -14,3 +14,4 @@ data:
   USER_EMAIL: {{ .Values.initUser.email }}
   USER_USERNAME: {{ .Values.initUser.username }}
   KEYCLOAK_NAMESPACE: {{ .Release.Namespace }}
+  KEYCLOAK_URL: "{{ if .Values.https.enabled }}https{{ else }}http{{ end }}://keycloak.{{ .Values.cnvrg.clusterDomain }}"

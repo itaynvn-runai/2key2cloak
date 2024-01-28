@@ -1,5 +1,3 @@
-# templates/post-install-job.yaml
-
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,13 +13,41 @@ spec:
       name: post-install-job
     spec:
       restartPolicy: OnFailure
+      initContainers:
+      - name: waiter
+        image: docker.io/cnvrg/network-debugger:1.4
+        command:
+        - sh
+        - -c
+        - |
+          # Wait until the pods are running
+          until kubectl -n $KEYCLOAK_NAMESPACE get pods -l app=keycloak -o jsonpath='{.items[*].status.phase}' | grep -q "Running"; do
+            POD_STATUS=$(kubectl -n $KEYCLOAK_NAMESPACE get pods -l app=keycloak -o jsonpath='{.items[*].status.phase}')
+            echo "Waiting for keycloak pods to be running... Current Pod Status: $POD_STATUS"
+            sleep 5
+          done
+          echo "Keycloak pods are running."
+
+          # Wait until the server is ready
+          KEYCLOAK_URL="$PROTOCOL://keycloak.$CLUSTER_DOMAIN"
+          HTTP_STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL")
+          until [ "$HTTP_STATUS_CODE" = "200" ]; do
+            echo "Waiting for the server to be ready... HTTP Status Code: $HTTP_STATUS_CODE"
+            sleep 5
+            HTTP_STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL")
+          done
+          echo "Server is ready. HTTP Status Code: $HTTP_STATUS_CODE"
+          echo "Initialization completed successfully."
+        envFrom:
+        - configMapRef:
+            name: keycloak-config
       containers:
-      - name: post-install-container
+      - name: keycloak-configuration
         image: docker.io/cnvrg/network-debugger:1.4
         command:
         - "/bin/bash"
         - "-c"
-        - "/config/keycloak_config.sh -d $CLUSTER_DOMAIN -o $OPERATOR -p $PROTOCOL"
+        - "/config/keycloak_config.sh"
         volumeMounts:
         - name: post-install-scripts
           mountPath: /config
@@ -36,3 +62,4 @@ spec:
         configMap:
           name: keycloak-post-install-script
           defaultMode: 0755
+      serviceAccountName: {{ include "2key2cloak.serviceAccountName" . }}
