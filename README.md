@@ -9,9 +9,25 @@ includes:
 - automatically creates an OIDC client
 
 ## install
-see helm values in next section
+add repo:
+```
+helm repo add 2key2cloak https://itaynvn.github.io/2key2cloak
+```
+
+basic install command:
 ```
 helm install keycloak 2key2cloak
+```
+
+cnvrg-based install command:
+```
+helm install -n keycloak --create-namespace keycloak 2key2cloak/2key2cloak \
+--set virtualService.enabled=true \
+--set virtualService.namespace=cnvrg \
+--set virtualService.gateway=istio-gw-cnvrg \
+--set cnvrg.clusterDomain=<CNVRG_CLUSTER_DOMAIN> \
+--set host=keycloak.<CNVRG_CLUSTER_DOMAIN> \
+--wait --debug
 ```
 
 ## configuration
