@@ -19,7 +19,7 @@ spec:
               number: 80
         path: /
         pathType: Prefix
-  {{- if .Values.https.enabled -}} 
+  {{- if .Values.https.enabled -}}
   tls:
   - hosts:
     - {{ .Values.host }}
