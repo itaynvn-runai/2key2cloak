@@ -19,7 +19,7 @@ spec:
       {{- end }}
     spec:
       initContainers:
-      - name: test
+      - name: chmod-data
         image: busybox
         command: ['sh', '-c', 'chmod -R 777 /opt/keycloak/data']
         volumeMounts:
@@ -29,20 +29,11 @@ spec:
       - command:
         - /opt/keycloak/bin/kc.sh
         - start-dev
-        {{- if .Values.https.enabled }}
-        env:
-        - name: KC_HOSTNAME_STRICT_HTTPS
-          value: "true"
-        - name: KC_HOSTNAME
-          value: {{ .Values.host }}
-        - name: KC_HOSTNAME_ADMIN_URL
-          value: "https://{{ .Values.host }}"
-        - name: KC_PROXY
-          value: edge
-        {{- end }}
         envFrom:
         - secretRef:
             name: keycloak-creds
+        - configMapRef:
+            name: keycloak-config
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: keycloak

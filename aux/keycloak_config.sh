@@ -98,11 +98,6 @@ NEW_TOKEN=$(get_access_token)
 CLIENT_SECRET=$(curl --location --request GET "$KEYCLOAK_URL/admin/realms/$REALM_NAME/clients/$CLIENT_UUID/client-secret" \
 --header "Authorization: Bearer $NEW_TOKEN" \
 | jq -r ".value")
-echo "* auth enabled + client secret retrieved *"
-
-# create secret with kubectl patch command:
-echo "* creating patch command secrets.. *"
-printf "kubectl -n cnvrg patch cnvrgapp cnvrg-app --type=json -p='[{\"op\": \"replace\", \"path\": \"/spec/sso\", \"value\": {\"adminUser\": \"$KEYCLOAK_ADMIN\", \"clientId\": \"$CLIENT_ID\", \"clientSecret\": \"$CLIENT_SECRET\", \"emailDomain\": [\"*\", \"mycorp.net\"], \"cookieSecret\": null, \"image\": null, \"enabled\": true, \"oidcIssuerUrl\": \"$KEYCLOAK_URL/realms/$REALM_NAME\", \"provider\": \"oidc\"}}]'" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic cnvrgapp-keycloak-patch --from-file=cnvrgapp_sso_kubectl.sh=/dev/stdin
-printf "kubectl -n cnvrg exec -it deploy/app -c cnvrg-app -- rails runner 'User.create!(username: \"inituser\", email: \"init@user.com\", password: \"$KEYCLOAK_ADMIN_PASSWORD\"); Organization.create!(slug: \"t3st1ng\", display_name: \"t3st1ng\", user_id: 1); Membership.create_membership(Organization.find_by(slug:\"t3st1ng\"), \"$USER_EMAIL\", 0);'" | kubectl -n $KEYCLOAK_NAMESPACE create secret generic cnvrg-organization-patch --from-file=cnvrg_organization.sh=/dev/stdin
-
-echo "*** post install script finished :) ***"
+echo "* auth enabled + client secret retrieved * \n CLIENT_UUID: $CLIENT_UUID \n CLIENT_SECRET: $CLIENT_SECRET"
+echo -e "*** post install script finished :) ***\n"
+env

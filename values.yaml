@@ -54,6 +54,7 @@ service:
 host: keycloak.web.mycorp.net
 
 cnvrg:
+  enabled: false
   clusterDomain: web.mycorp.net
   operatorVersion: v4
 
@@ -68,6 +69,10 @@ ingress:
   className: ""
   namespace: ""
   tlsSecretName: chart-example-tls
+  noWildcard:
+    enabled: false
+    relativePath: /
+    loadBalancer: ""
 
 openshift:
   enabled: false

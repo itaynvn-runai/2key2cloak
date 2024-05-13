@@ -16,8 +16,8 @@ spec:
           service:
             name: keycloak
             port:
-              number: 80
-        path: /
+              name: http
+        path: {{ .Values.noWildcard.relativePath }}
         pathType: Prefix
   {{- if .Values.https.enabled }}
   tls:
@@ -25,4 +25,12 @@ spec:
     - {{ .Values.host }}
     secretName: {{ .Values.ingress.tlsSecretName }}
   {{- end }}
+{{- if .Values.ingress.noWildcard.enabled }}
+status:
+  loadBalancer:
+    ingress:
+    - hostname: >-
+        {{ .Values.ingress.noWildcard.loadBalancer }}
 {{- end }}
+{{- end }}
+

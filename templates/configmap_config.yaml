@@ -14,4 +14,16 @@ data:
   USER_EMAIL: {{ .Values.initUser.email }}
   USER_USERNAME: {{ .Values.initUser.username }}
   KEYCLOAK_NAMESPACE: {{ .Release.Namespace }}
+  KC_PROXY: edge
+  KC_HOSTNAME: {{ .Values.host }}
+  {{ if .Values.cnvrg.enabled }}
   KEYCLOAK_URL: "{{ if .Values.https.enabled }}https{{ else }}http{{ end }}://keycloak.{{ .Values.cnvrg.clusterDomain }}"
+    {{- if .Values.https.enabled }}
+  KC_HOSTNAME_STRICT_HTTPS: "true"
+  KC_HOSTNAME_ADMIN_URL: "https://{{ .Values.host }}"
+    {{- end }}  
+  {{- end }}
+  {{ if .Values.noWildcard.enabled }}
+  KC_HOSTNAME_STRICT_HTTPS: 'true'
+  KC_HTTP_RELATIVE_PATH: {{ .Values.noWildcard.relativePath }}
+  {{- end }}
