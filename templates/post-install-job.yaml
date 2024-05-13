@@ -29,7 +29,6 @@ spec:
           echo "Keycloak pods are running."
 
           # Wait until the server is ready
-          KEYCLOAK_URL="$PROTOCOL://keycloak.$CLUSTER_DOMAIN"
           HTTP_STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$KEYCLOAK_URL")
           until [ "$HTTP_STATUS_CODE" = "200" ]; do
             echo "Waiting for the server to be ready... HTTP Status Code: $HTTP_STATUS_CODE"
